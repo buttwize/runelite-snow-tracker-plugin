@@ -1,2 +1,2 @@
-# Example
-An example greeter plugin
+# Snow Tracker
+Tracks snow on the ground.
