@@ -28,46 +28,37 @@ public class SnowOverlay extends Overlay {
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        final Color colorText = this.config.getTextColor();
-        final boolean shouldOutline = this.config.getEnableTextOutline();
+        this.plugin.getSnow().forEach(snow -> {
+            final int remaining = snow.getRemaining();
+            final String text = String.valueOf(remaining);
 
-        final Color colorWarning = this.config.getWarningColor();
-        final int thresholdWarning = this.config.getWarningThreshold();
-
-        final Color colorError = this.config.getErrorColor();
-        final int thresholdError = this.config.getErrorThreshold();
-
-        final Color colorBackground = this.config.getBackgroundColor();
-        final int backgroundSize = this.config.getBackgroundSize();
-
-        final boolean backgroundEnabled = this.config.getEnableBackground();
-
-        this.plugin.getSnowList().forEach(snow -> {
-            final String text = snow.getTicksLeftDisplay();
-            final LocalPoint localPoint = LocalPoint.fromWorld(this.client.getTopLevelWorldView(), snow.getLocation());
-            if (localPoint != null) {
-                final Color color;
-                final int counter = snow.getTicksLeft();
-                if (counter < thresholdError) {
-                    color = colorError;
-                } else if (counter < thresholdWarning) {
-                    color = colorWarning;
-                } else {
-                    color = colorText;
-                }
-
-                final Point point = Perspective.getCanvasTextLocation(this.client, graphics, localPoint, text, 0);
-                Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
-
-                if (backgroundEnabled) {
-                    this.drawTextBackground(graphics, point, colorBackground, textBounds, backgroundSize);
-                }
-
-                this.drawText(graphics, point, color, shouldOutline, text);
+            final LocalPoint localPoint = snow.getLocation();
+            final Point point = Perspective.getCanvasTextLocation(this.client, graphics, localPoint, text, 0);
+            if (point == null) {
+                return;
             }
+
+            final Color color = color(remaining);
+            Rectangle2D textBounds = graphics.getFontMetrics().getStringBounds(text, graphics);
+
+            if (this.config.getEnableBackground()) {
+                this.drawTextBackground(graphics, point, this.config.getBackgroundColor(), textBounds, this.config.getBackgroundSize());
+            }
+
+            this.drawText(graphics, point, color, this.config.getEnableTextOutline(), text);
         });
 
         return null;
+    }
+
+    private Color color(int counter) {
+        if (counter < this.config.getErrorThreshold()) {
+            return this.config.getErrorColor();
+        } else if (counter < this.config.getWarningThreshold()) {
+            return this.config.getWarningColor();
+        } else {
+            return this.config.getTextColor();
+        }
     }
 
     private void drawTextBackground(Graphics2D graphics, Point point, Color color, Rectangle2D textBounds, int size) {
