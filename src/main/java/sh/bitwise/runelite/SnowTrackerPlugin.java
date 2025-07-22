@@ -3,11 +3,10 @@ package sh.bitwise.runelite;
 import com.google.inject.Provides;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
-import net.runelite.api.Player;
-import net.runelite.api.coords.WorldPoint;
-import net.runelite.api.events.ChatMessage;
+import net.runelite.api.GameObject;
+import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.gameval.ObjectID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -15,9 +14,8 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 import javax.inject.Inject;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 @PluginDescriptor(
@@ -26,21 +24,14 @@ import java.util.Objects;
         tags = {"snow", "track", "tracker", "time", "timer"}
 )
 public class SnowTrackerPlugin extends Plugin {
-    private static final String SNOW_MESSAGE = "You made some snow fall!";
-
     @Getter
-    private final List<Snow> snowList = new LinkedList<>();
-
-    @Inject
-    private Client client;
+    private final List<Snow> snow = new ArrayList<>();
 
     @Inject
     private SnowOverlay overlay;
 
     @Inject
     private OverlayManager overlayManager;
-
-    private WorldPoint playerLocation;
 
     @Provides
     SnowTrackerConfig provideConfig(ConfigManager configManager) {
@@ -55,26 +46,27 @@ public class SnowTrackerPlugin extends Plugin {
     @Override
     protected void shutDown() {
         overlayManager.remove(overlay);
-        this.snowList.clear();
+        this.snow.clear();
     }
 
     @Subscribe
-    public void onChatMessage(ChatMessage event) {
-        if (Objects.equals(event.getMessage(), SNOW_MESSAGE)) {
-            log.debug("Snow created by current player at {}", this.playerLocation);
-            this.snowList.add(new Snow(this.playerLocation));
+    public void onGameObjectSpawned(final GameObjectSpawned event) {
+        final GameObject gameObject = event.getGameObject();
+        switch (gameObject.getId()) {
+            case ObjectID.GUBLINCH_SNOW_SMALL_1:
+            case ObjectID.GUBLINCH_SNOW_SMALL_2:
+            case ObjectID.GUBLINCH_SNOW_SMALL_3:
+            case ObjectID.GUBLINCH_SNOW_SMALL_4:
+            case ObjectID.GUBLINCH_SNOW_SMALL_5:
+                log.debug("Snow tracked at {}", gameObject.getLocalLocation());
+                this.snow.add(new Snow(gameObject));
+                break;
         }
     }
 
     @Subscribe
     public void onGameTick(GameTick event) {
-        this.snowList.forEach(Snow::decrement);
-        this.snowList.removeIf(snow -> snow.getTicksLeft() < 0);
-
-        final Player player = client.getLocalPlayer();
-        if (null != player) {
-            player.getLocalLocation();
-            this.playerLocation = player.getWorldLocation();
-        }
+        this.snow.removeIf(Snow::isExpired);
+        this.snow.forEach(Snow::tick);
     }
 }

@@ -1,7 +1,8 @@
 package sh.bitwise.runelite;
 
 import lombok.Getter;
-import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.GameObject;
+import net.runelite.api.coords.LocalPoint;
 
 /**
  * Wrapper class for a GameObject that represents Snow.
@@ -10,21 +11,21 @@ public class Snow {
     private static final int DEFAULT_DURATION = 24;
 
     @Getter
-    private final WorldPoint location;
+    private final LocalPoint location;
 
     @Getter
-    private String ticksLeftDisplay;
+    private int remaining;
 
-    @Getter
-    private int ticksLeft;
-
-    Snow(WorldPoint location) {
-        this.ticksLeft = DEFAULT_DURATION;
-        this.ticksLeftDisplay = "" + this.ticksLeft;
-        this.location = location;
+    Snow(GameObject object) {
+        this.remaining = DEFAULT_DURATION;
+        this.location = object.getLocalLocation();
     }
 
-    public void decrement() {
-        this.ticksLeftDisplay = "" + --this.ticksLeft;
+    public void tick() {
+        --this.remaining;
+    }
+
+    public boolean isExpired() {
+        return remaining < 1;
     }
 }
