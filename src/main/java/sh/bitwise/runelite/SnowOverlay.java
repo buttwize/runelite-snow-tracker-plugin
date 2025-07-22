@@ -44,7 +44,7 @@ public class SnowOverlay extends Overlay {
 
         this.plugin.getSnowList().forEach(snow -> {
             final String text = snow.getTicksLeftDisplay();
-            final LocalPoint localPoint = LocalPoint.fromWorld(this.client, snow.getLocation());
+            final LocalPoint localPoint = LocalPoint.fromWorld(this.client.getTopLevelWorldView(), snow.getLocation());
             if (localPoint != null) {
                 final Color color;
                 final int counter = snow.getTicksLeft();
@@ -73,8 +73,8 @@ public class SnowOverlay extends Overlay {
     private void drawTextBackground(Graphics2D graphics, Point point, Color color, Rectangle2D textBounds, int size) {
         graphics.setColor(color);
 
-        final int x = (int) (point.getX() - (size / 2) + (textBounds.getWidth() / 2));
-        final int y = (int) (point.getY() - (size / 2) - (textBounds.getHeight() / 2));
+        final int x = (int) (point.getX() - ((double) size / 2) + (textBounds.getWidth() / 2));
+        final int y = (int) (point.getY() - ((double) size / 2) - (textBounds.getHeight() / 2));
 
         graphics.fillRect(x, y, size, size);
     }
